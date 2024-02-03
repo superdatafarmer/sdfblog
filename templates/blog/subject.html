@@ -1,0 +1,32 @@
+{% extends 'blog/home.html' %}
+{% load static %}
+
+{% block title %}专题{% endblock %}
+
+{% block article_list_head %}
+<span class="layui-breadcrumb" lay-separator=">">
+    <a href="{% url 'blog:home' %}">首页</a>
+    <a href="#">专题</a>
+</span>
+{% endblock %}
+{% block article_list %}
+    <div class="layui-row layui-col-space10 subject-list">
+        {% for subject in subjects %}
+            <div class="layui-col-xs6 layui-col-sm3 subject">
+                <a href="{% url 'blog:subject_deatil' subject.slug %}">
+                    <div>
+                        <img src="{{ subject.cover.url }}" alt="{{ subject.name }}" class="cover">
+                        <div class="content">
+                            <h3 class="title">{{ subject.name }}</h3>
+                            <p class="summary">文章数量: {{ subject.get_article_count }}</p>
+                            <hr>
+                            <p class="describe">{{ subject.description|truncatechars:50}}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+{% block extended_js %}
+{% endblock %}

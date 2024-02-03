@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static blog_tags %}
+
+{% block title %}文章|详情{% endblock %}
+
+{% block main_content %}
+<div class="layui-container ws-container">
+    <!-- 左侧边菜单 -->
+    <div class="layui-panel ws-menu">
+        <ul class="layui-menu layui-menu-lg ws-docs-menu">
+            {% if article.topic is not None %}
+                {% get_ws_menu article as topics %}
+                {% for topic in topics %}
+                    <li class="layui-menu-item-group" lay-options="{type: 'group', isAllowSpread: true}">
+                        <div class="layui-menu-body-title">{{ topic.0 }}</div>
+                        <ul>
+                            {% for item in topic.1 %}
+                                {% if item.1 == article.get_absolute_url %}
+                                    <li class="layui-menu-item-checked"><div class="layui-menu-body-title"><a href="{{ item.1 }}">{{ item.0 }}</a></div></li>
+                                {% else %}
+                                    <li><div class="layui-menu-body-title"><a href="{{ item.1 }}">{{ item.0 }}</a></div></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- 主要内容区 -->
+    <div class="ws-content">
+        <div class="ws-side">
+            <div class="ws-side-fixed">
+                <div class="ws-dir">
+                    <h3>大纲</h3>
+                    <hr>
+                    <ul class="ws-dir-ul"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="ws-center-detail layui-text">
+            <span class="layui-breadcrumb" lay-separator=">">
+                <a href="{% url 'blog:home' %}">首页</a>
+                <a href="{{ article.get_absolute_subject_url }}">{{ article.topic.subject }}</a>
+                <a href="#">详情</a>
+            </span>
+            <div class="article-title">{{ article.title }}</div>
+            <div class="article-tags">
+                <i class="layui-icon layui-icon-note">&nbsp;<a href="#">{{ article.category }}</a></i>
+                <i class="layui-icon layui-icon-time">&nbsp;<span>{{ article.created|date:'Y-m-d H:i:s' }}</span></i>
+                <i class="layui-icon layui-icon-eye">&nbsp;<span>{{ article.views }}</span></i>
+                {% if request.user.is_authenticated %}
+                    {% like_status article request.user as status %}
+                    {% if status == '1' %}
+                        <i class="layui-icon layui-icon-heart liked" id="like-icon"></i>&nbsp;<span id="like-num">{{ article.likes }}</span>
+                    {% else %}
+                        <i class="layui-icon layui-icon-heart" id="like-icon"></i>&nbsp;<span id="like-num">{{ article.likes }}</span>
+                    {% endif %}
+                {% else %}
+                    <i class="layui-icon layui-icon-heart" id="like-icon"></i>&nbsp;<span id="like-num">{{ article.likes }}</span>
+                {% endif %}
+            </div>
+            <hr>
+            {% if can_access %}
+                <blockquote><p class="article-summary">{{ article.summary }}</p></blockquote>
+                {{ article.content|safe }}
+            {% else %}
+                <p style="color: #e81123;font-size: 24px;">你没有权限访问！请返回 <a href="/">首页</a></p>
+            {% endif %}
+        </div>
+        <div class="comment-area">
+            <fieldset class="layui-elem-field layui-field-title" style="margin: 10px 0 0; text-align: center;">
+                <legend style="font-weight: lighter;">评论</legend>
+            </fieldset>
+            <!-- 评论区 -->
+            {% if not request.user.is_authenticated %}
+                <div class="comment-text">
+                    您尚未登录，请 <a href="{% url 'oauth:login' %}?from={{ request.get_full_path }}">登录</a> 后评论
+                </div>
+            {% else %}
+                <div class="comment-text">
+                    <form class="layui-form" action="" id="reply">
+                        <div class="layui-form-item">
+                            <input type="text" name="ct" value="{{ ct }}" hidden>
+                            <input type="text" name="object_id" value="{{ article.pk }}" hidden>
+                            <input type="text" name="parent_id" value="0" hidden>
+                        </div>
+                        <div class="layui-form-item layui-form-text">
+                            <textarea name="comment" placeholder="输入评论(小于200个字符)..." class="layui-textarea" lay-verify="required|comment"></textarea>
+                        </div>
+                        <div class="layui-form-item">
+                            <button type="submit" class="layui-btn" lay-submit lay-filter="comment-submit">立即评论</button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+            <div class="comment-list">
+                <div class="summary">共 {{ comments.count }} 条评论 | 欢迎尬评</div>
+                <div class="list">
+                    {% for comment in comments %}
+                        <div id="root_{{ comment.pk }}" class="comment-item">
+                            <span class="author">{{ comment.user.nickname }}</span>
+                            <span class="time">{{ comment.created|date:"Y-m-d H:i:s" }}</span>
+                            <div id="comment_{{ comment.pk }}" class="comment-body">{{ comment.text|safe }}</div>
+                            {% if request.user.is_authenticated %}
+                                <a href="javascript:;" class="reply-comment">回复</a>
+                            {% else %}
+                                <span class="login-reply-comment">请 <a href="{% url 'oauth:login' %}?from={{ request.get_full_path }}">登录</a> 进行回复</span>
+                            {% endif %}
+                            {% if request.user == comment.user or request.user.is_staff %}
+                                <a href="javascript:;" class="del-comment">删除</a>
+                            {% endif %}
+                        </div>
+                        <div class="list-children">
+                            {% for re_comment in comment.root_comment.all %}
+                                <div class="reply-comment-item">
+                                    <span class="author">{{ re_comment.user.nickname }}</span>
+                                    <i class="layui-icon layui-icon-speaker"></i>
+                                    <span class="reply">{{ re_comment.reply_to.nickname }}</span>
+                                    <span class="time">{{ re_comment.created|date:"Y-m-d H:i:s" }}</span>
+                                    <div id="comment_{{ re_comment.pk }}" class="comment-body">{{ re_comment.text|safe }}</div>
+                                    {% if request.user.is_authenticated %}
+                                        <a href="javascript:;" class="reply-comment">回复</a>
+                                    {% else %}
+                                        <span class="login-reply-comment">请 <a href="{% url 'oauth:login' %}?from={{ request.get_full_path }}">登录</a> 进行回复</span>
+                                    {% endif %}
+                                    {% if request.user == re_comment.user or request.user.is_staff %}
+                                        <a href="javascript:;" class="del-comment">删除</a>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 左侧边菜单的图标 -->
+<div class="ws-menu-bar layui-bg-green layui-hide">
+    <i class="layui-icon layui-icon-spread-left"></i>
+</div>
+{% endblock %}
+
+{% block toc_icon %}
+<li class="layui-icon layui-icon-more-vertical" id="toc-icon"></li>
+{% endblock %}
+
+{% block extended_js %}
+<script>
+layui.use(function(){
+    var form = layui.form;  // 表单
+    var layer = layui.layer;  // 弹出层
+    layui.code({
+        elem: '.codehilite',
+        langMarker: true,
+        highlighter:'hljs',
+        wordWrap:false,
+        codeRender: function(code, opts){
+            return hljs.highlight(code.replaceAll('&gt;','>').replaceAll('&lt;','<'), {language: opts.lang}).value;
+        }
+    });
+
+    // 喜欢
+    $('.article-tags').on('click','#like-icon',function (){
+        var action = '1';
+        var element = $('#like-icon');
+        if($('#like-icon').hasClass('liked')){
+            action = '0';
+        }
+        $.ajax({
+            url: "{% url 'blog:changelike' %}",
+            type: 'GET',
+            data: {
+                article_id: {{ article.pk }},
+                action: action
+            },
+            cache: false,
+            success: function(data){
+                console.log(data)
+                if(data.status == '1'){
+                    // 更新点赞状态
+                    if(action == '1'){
+                        element.addClass('liked');
+                        layer.msg('已点赞', {icon: 6});
+                    }else{
+                        element.removeClass('liked');
+                        layer.msg('已取消点赞', {icon: 5});
+                    }
+                    // 更新点赞数量
+                    var liked_num = $('#like-num');
+                    liked_num.text(data['like_num']);
+                }else{
+                    layer.msg(data.error, {icon: 5});
+                }
+            },
+            error: function(xhr){
+                layer.msg(xhr, {icon: 5});
+            }
+        });
+    });
+
+    // 回复评论
+    $('.comment-list').on('click','.reply-comment',function (){
+        $('#reply-comment').remove();
+        var h = $(document).height() - $(this).offset().top;  // 距离低端的距离
+        var html = '<div class="comment-text">'
+            + '<form class="layui-form" action="" id="reply-comment">'
+            + '<div class="layui-form-item">'
+            + '<input type="text" name="ct" value="{{ ct }}" hidden>'
+            + '<input type="text" name="object_id" value="{{ article.pk }}" hidden>'
+            + '<input type="text" name="parent_id" value="' + $(this).parent().children('.comment-body').attr('id').split('_')[1] + '" hidden>'
+            + '</div>'
+            + '<div class="layui-form-item layui-form-text">'
+            + '<textarea name="comment" placeholder="输入评论(小于200个字符)..." class="layui-textarea" lay-verify="required|comment"></textarea>'
+            + '</div>'
+            + '<div class="layui-form-item">'
+            + '<button type="submit" class="layui-btn" lay-submit lay-filter="re-comment-submit">立即评论</button>'
+            + '</div>'
+            + '</form>'
+            + '</div>';
+        $(this).parent().append(html);
+        if(h < 600){
+            $('html').scrollTop($(document).height());
+        }
+    });
+
+    // 评论
+    function add_comment(field){
+        $.ajax({
+           type: "POST",
+            url: "{% url 'comment:add_comment' %}",
+            data: field,
+            headers: {'x-CSRFToken':'{{ csrf_token }}'},
+            cache: false,
+            success: function (data) {
+                if(data.status == '0'){
+                    layer.msg(data.error, {icon: 5});
+                }else{
+                    var html = '';
+                    if(data.root_id == ''){
+                        html = html
+                            + '<div id="root_' + data.pk + '" class="comment-item">'
+                            + '<span class="author">' + data.user + '</span>&nbsp;'
+                            + '<i class="layui-icon layui-icon-speaker"></i>'
+                            + '<span class="reply">' + data.reply_to + '</span>'
+                            + '<span class="time">' + data.created + '</span>&nbsp;'
+                            + '<div id="comment_' + data.pk + '" class="comment-body">' + data.text + '</div>\n'
+                            + '<a href="javascript:;" class="reply-comment">回复</a>&nbsp;'
+                            + '<a href="javascript:;" class="del-comment">删除</a>'
+                            + '</div>'
+                            + '<div class="list-children"></div>';
+                        $('.comment-list .list').append(html);
+                        $('#reply textarea').val('');
+                    }else{``
+                        $('#reply-comment').remove();
+                        html = html
+                            + '<div class="reply-comment-item">'
+                            + '<span class="author">' + data.user + '</span>&nbsp;'
+                            + '<i class="layui-icon layui-icon-speaker"></i>&nbsp;'
+                            + '<span class="reply">' + data.reply_to + '</span>&nbsp;'
+                            + '<span class="time">' + data.created + '</span>&nbsp;'
+                            + '<div id="comment_' + data.pk + '" class="comment-body">' + data.text + '</div>\n'
+                            + '<a href="javascript:;" class="reply-comment">回复</a>&nbsp;'
+                            + '<a href="javascript:;" class="del-comment">删除</a>'
+                            + '</div>';
+                        var s = '#root_' + data.root_id + '+.list-children';
+                        $(s).append(html);
+                    }
+                }
+            }
+        });
+    }
+    form.on('submit(comment-submit)',function(data){
+        var field = data.field; // 获取表单全部字段值
+        // 自定义验证规则
+        form.verify({
+            // 确认密码
+            comment: function (value, item) {
+                if (value.length > 200) {
+                    return '不能超过200个字符';
+                }
+            }
+        });
+        // 此处可执行 Ajax 等操作
+        add_comment(field)
+        return false; // 阻止默认 form 跳转
+    });
+    form.on('submit(re-comment-submit)',function(data){
+        var field = data.field; // 获取表单全部字段值
+        // 自定义验证规则
+        form.verify({
+            // 确认密码
+            comment: function (value, item) {
+                if (value.length > 10) {
+                    return '不能超过200个字符';
+                }
+            }
+        });
+        // 此处可执行 Ajax 等操作
+        add_comment(field)
+        return false; // 阻止默认 form 跳转
+    });
+
+    // 删除逻辑
+    $('.comment-list').on('click','.del-comment',function (){
+        var id = $(this).parent('div').find('.comment-body').attr('id').split('_')[1];
+        layer.confirm('确定要删除评论么？', {
+            btn: ['确定', '关闭'] //按钮
+          }, function(){
+            $.ajax({
+                type: "GET",
+                url: "{% url 'comment:del_comment' %}?pk=" + id,
+                headers: {'x-CSRFToken':'{{ csrf_token }}'},
+                cache: false,
+                success: function (data) {
+                    if(data.status == '0'){
+                        layer.msg(data.error, {icon: 5});
+                    }else{
+                        location.reload();
+                    }
+                }
+            });
+          });
+    });
+});
+</script>
+{% endblock %}

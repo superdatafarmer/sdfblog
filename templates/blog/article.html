@@ -1,0 +1,11 @@
+{% extends 'blog/home.html' %}
+{% load static %}
+
+{% block title %}文章{% endblock %}
+
+{% block article_list_head %}
+<span class="layui-breadcrumb" lay-separator=">">
+    <a href="{% url 'blog:home' %}">首页</a>
+    <a href="#">文章【分类: {{ filter }}】</a>
+</span>
+{% endblock %}

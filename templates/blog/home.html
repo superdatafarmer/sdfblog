@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static blog_tags %}
+
+{% block title %}首页{% endblock %}
+
+{% block main_content %}
+<div class="layui-container ws-container">
+    <div class="layui-row">
+        <div class="layui-col-sm9 layui-col-md9 left-main">
+            {% block article_list_head %}
+                <div class="layui-carousel" id="images-carousel">
+                    <div carousel-item>
+                        {% get_carousel_list as carousels %}
+                        {% for carousel in carousels %}
+                            <div><a href="{{ carousel.jump_url }}"><img src="{{ carousel.img_url.url }}" alt="{{ carousel.title }}"></a></div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <h2 class="article-column">文章推荐</h2>
+            {% endblock %}
+            <hr style="border-color: #ff5722;">
+            {% block article_list %}
+                <div class="article-list">
+                    {% for article in articles %}
+                        <div class="layui-row article-card">
+                            <div class="layui-col-xs3 layui-col-md2 article-cover"><img src="{{ article.cover.url }}" alt="{{ article.title }}"></div>
+                            <div class="layui-col-xs9 layui-col-md10 article-info">
+                                <h3><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h3>
+                                <p class="article-summary">{{ article.summary }}</p>
+                                <p class="article-tags">
+                                    <i class="layui-icon layui-icon-note">&nbsp;<a href="#">{{ article.category }}</a></i>
+                                    <i class="layui-icon layui-icon-time">&nbsp;<span>{{ article.created|date:'Y-m-d H:i' }}</span></i>
+                                    <i class="layui-icon layui-icon-eye">&nbsp;<span>{{ article.views }}</span></i>
+                                    {% if status == '1' %}
+                                        <i class="layui-icon layui-icon-heart liked"></i>&nbsp;<span>{{ article.likes }}</span>
+                                    {% else %}
+                                        <i class="layui-icon layui-icon-heart"></i>&nbsp;<span>{{ article.likes }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        暂无文章
+                    {% endfor %}
+                </div>
+                <div id="paginator" class="ml-auto"></div>
+            {% endblock %}
+        </div>
+        <div class="layui-col-sm3 layui-col-md3 right-side">
+            <form class="layui-form" method="post" action="" id="search">
+                <div class="layui-form-item">
+                    <div class="layui-input-inline">
+                        <input type="text" name="search" lay-verify="required" placeholder="请输入关键字" class="layui-input">
+                    </div><button class="layui-btn" lay-filter="*" lay-submit>搜索</button>
+                </div>
+            </form>
+
+            {% get_welcome_img as welcome_img %}
+            <div class="welcome"><a href="{{ welcome_img.jump_url }}"><img src="{{ welcome_img.img_url.url }}" alt="{{ img_url.title }}"></a></div>
+
+            <div class="layui-tab layui-tab-brief top-tab" lay-filter="test-hash">
+                <ul class="layui-tab-title">
+                    <li class="layui-this" lay-id="11">昨日点击</li>
+                    <li lay-id="22">全部点击</li>
+                    <li lay-id="33">喜欢最多</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <div class="layui-tab-item layui-show">
+                        <ul>
+                            {% get_top5_views_yesterday as top5_views_yesterday %}
+                            {% for article in top5_views_yesterday %}
+                                <li><span class="layui-badge">{{ forloop.counter }}</span><a href="{{ article.content_object.get_absolute_url }}">{{ article.content_object.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="layui-tab-item">
+                        <ul>
+                            {% get_top5_views_all as top5_views_all %}
+                            {% for article in top5_views_all %}
+                                <li><span class="layui-badge">{{ forloop.counter }}</span><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="layui-tab-item">
+                        <ul>
+                            {% get_top5_likes as top5_likes %}
+                            {% for article in top5_likes %}
+                                <li><span class="layui-badge">{{ forloop.counter }}</span><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="word-cloud">
+                <h3>标签云</h3>
+                <ul>
+                    {% get_tags as tags %}
+                    {% for tag in tags %}
+                        <li><a href="{% url 'blog:article' %}?tag={{ tag.slug }}">{{ tag.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <!-- <div class="ad"> <img src="static/img/03.jpg"> </div> -->
+            <div class="links">
+                <h3><span>[<a href="#">申请友情链接</a>]</span>友情链接</h3>
+                <ul>
+                    <li><a href="https://docs.djangoproject.com/zh-hans/4.2/" target="_blank">django</a></li>
+                    <li><a href="https://layui.dev/" target="_blank">layui</a></li>
+                    <li><a href="https://tendcode.com/" target="_blank">tendCode</a></li>
+                    <li><a href="https://v4.bootcss.com">bootstrap</a></li>
+                    <li><a href="https://djangopackages.org/">djangoPackages</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extended_js %}
+<script>
+    // 渲染分区配置
+    layui.use('laypage', function(){
+        var laypage = layui.laypage;
+        laypage.render({
+            elem: 'paginator' //注意，这里的 paginator 是 ID，不用加 # 号
+            ,count: {{count}} //数据总数，从服务端得到
+            ,limit: {{limit}}  //每页条数
+            ,limits: [5,10,20]
+            ,groups: 5  // 连续出现页码的个数
+            ,curr: {{curr}}
+            ,layout: ['count', 'prev', 'page', 'next', 'limit',] // 'refresh', 'skip'
+            ,jump: function(obj, first){
+                if(!first){
+                    // 如果不是第一次渲染，则打开以下url，拼接路由
+                    location.href = '{{ base_url }}' + '?curr=' + obj.curr + '&limit=' + obj.limit;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
