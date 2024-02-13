@@ -6,7 +6,7 @@ import markdown
 import datetime
 
 # Create your views here.
-from blog.models import Article,About,LikeDetail,Tag,Subject
+from blog.models import Article,About,LikeDetail,Tag,Subject,ToolSet
 from blog.utils import set_views_once_read
 from comment.models import Comment
 
@@ -180,4 +180,22 @@ def changelike(request):
 # 开发日志
 def about(request):
     context = {"nav_item":"about"}
+    # markdown语法渲染器
+    md = markdown.Markdown(
+        extensions=[
+            # 包含 缩写、表格等常用扩展
+            'markdown.extensions.extra',
+            # 语法高亮扩展
+            'markdown.extensions.codehilite',
+        ],
+    )
+    content = md.convert(About.objects.all().first().content)
+    context['content'] = content
     return render(request, 'blog/about.html', context=context)
+
+# 工具集
+def tool(request):
+    context = {"nav_item":"tool"}
+    toolsets = ToolSet.objects.all()
+    context['toolsets'] = toolsets
+    return render(request, 'blog/tool.html', context=context)

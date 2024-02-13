@@ -230,12 +230,40 @@ class Welcome(models.Model):
 
 # 关于
 class About(models.Model):
-    title = models.CharField(max_length=20,verbose_name="时间或标题")
-    content = models.TextField(max_length=250,verbose_name="描述内容")
+    content = MDTextField(verbose_name="描述内容")
 
     class Meta:
         verbose_name = '关于'
         verbose_name_plural = verbose_name
 
     def __str__(self):
-        return self.title
+        return '关于'
+
+
+class ToolSet(models.Model):
+    name = models.CharField(max_length=10, verbose_name='名称')
+    sort_by = models.IntegerField(default=999,verbose_name='排序')
+
+    class Meta:
+        verbose_name = '工具集合'
+        verbose_name_plural = verbose_name
+        ordering = ('sort_by',)
+
+    def __str__(self):
+        return self.name
+
+class Tool(models.Model):
+
+    name = models.CharField(max_length=10,verbose_name='名称')
+    url = models.CharField(max_length=250,verbose_name='链接地址')
+    description = models.TextField(max_length=250,verbose_name='描述')
+    sort_by = models.IntegerField(default=999, verbose_name='排序')
+    toolset = models.ForeignKey(ToolSet,on_delete=models.CASCADE,related_name='tools',verbose_name='合集')
+
+    class Meta:
+        verbose_name = '工具'
+        verbose_name_plural = verbose_name
+        ordering = ('sort_by',)
+
+    def __str__(self):
+        return self.name

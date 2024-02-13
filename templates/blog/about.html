@@ -5,9 +5,12 @@
 
 {% block article_list_head %}
     <span class="layui-breadcrumb" lay-separator=">">
-    <a href="{% url 'blog:home' %}">首页</a>
-    <a href="#">关于</a>
-</span>
+        <a href="{% url 'blog:home' %}">首页</a>
+        <a href="#">关于</a>
+    </span>
 {% endblock %}
 {% block article_list %}
+    <div class="ws-center-detail layui-text">
+        {{ content|safe }}
+    </div>
 {% endblock %}

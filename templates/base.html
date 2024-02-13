@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}首页{% endblock %}</title>
-    <link rel="shortcut icon" href="{% static 'images/favicon-test.ico' %}"/>
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}"/>
     <link rel="stylesheet" href="{% static 'layui/css/layui.css' %}">
     <link rel="stylesheet" href="https://cdn.staticfile.net/highlight.js/11.4.0/styles/monokai-sublime.min.css">
     <link rel="stylesheet" href="{% static 'index.css' %}">
@@ -28,7 +28,7 @@
     <div class="layui-header ws-header ws-bg-light">
         <div class="layui-container">
             <div class="ws-logo">
-                <a class="logo" href="{% url 'blog:home' %}"><img src="{% static 'images/logo-test.png' %}" alt="数据民工"></a>
+                <a class="logo" href="{% url 'blog:home' %}"><img src="{% static 'images/logo.png' %}" alt="数据民工"></a>
             </div>
             <div class="ws-header-menu">
                 <ul class="layui-nav layui-bg-gray ws-bg-light" id="LAY_NAV_TOP">
@@ -48,9 +48,9 @@
                         <li class="layui-nav-item"><a href="{% url 'blog:subject' %}">专题</a></li>
                     {% endif %}
                     {% if nav_item == 'tool' %}
-                        <li class="layui-nav-item layui-this"><a href="#">工具</a></li>
+                        <li class="layui-nav-item layui-this"><a href="{% url 'blog:tool' %}">工具</a></li>
                     {% else %}
-                        <li class="layui-nav-item"><a href="#">工具</a></li>
+                        <li class="layui-nav-item"><a href="{% url 'blog:tool' %}">工具</a></li>
                     {% endif %}
                     {% if nav_item == 'about' %}
                         <li class="layui-nav-item layui-this"><a href="{% url 'blog:about' %}">关于</a></li>
@@ -97,7 +97,7 @@
         <div class="concat_me">
             <span>联系我:</span>
             <i class="layui-icon layui-icon-login-wechat"></i>
-            <span>xxx</span>
+            <span>superdatafarmerup</span>
         </div>
     </div>
     <!-- 菜单toggle弹窗遮罩 -->

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Topic,Subject,Tag,Category,Article,Carousel,Welcome,About,LikeDetail
+from .models import Topic,Subject,Tag,Category,Article,Carousel,Welcome,About,LikeDetail,ToolSet,Tool
 
 # Register your models here.
 # 自定义管理站点的名称和URL标题
@@ -84,8 +84,21 @@ class WelcomeAdmin(admin.ModelAdmin):
     list_display = ('id','title','img_url','jump_url','is_show')
     list_editable = ('is_show',)
 
-# 开发日志
-admin.site.register(About);
+# 关于
+admin.site.register(About)
 
 # 喜欢列表
-admin.site.register(LikeDetail);
+admin.site.register(LikeDetail)
+
+
+# 工具
+@admin.register(ToolSet)
+class ToolSetAdmin(admin.ModelAdmin):
+    list_display = ('id','name','sort_by')
+    list_editable = ('name','sort_by')
+
+@admin.register(Tool)
+class ToolAdmin(admin.ModelAdmin):
+    list_display = ('id','name','url','toolset','sort_by')
+    list_display_links = ('name',)
+    list_editable = ('url','toolset','sort_by')
